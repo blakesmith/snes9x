@@ -31,5 +31,6 @@ bool8 S9xUnfreezeGame (const char *);
 int S9xUnfreezeGameMem (const uint8 *,uint32);
 void S9xFreezeToStream (STREAM);
 int	 S9xUnfreezeFromStream (STREAM);
+bool8 S9xSPCDump (const char *);
 
 #endif

@@ -957,23 +957,6 @@ static FreezeData	SnapBSX[] =
 };
 
 #undef STRUCT
-#define STRUCT	struct SMSU1
-
-static FreezeData	SnapMSU1[] =
-{
-	INT_ENTRY(9, MSU1_STATUS),
-	INT_ENTRY(9, MSU1_DATA_SEEK),
-	INT_ENTRY(9, MSU1_DATA_POS),
-	INT_ENTRY(9, MSU1_TRACK_SEEK),
-	INT_ENTRY(9, MSU1_CURRENT_TRACK),
-	INT_ENTRY(9, MSU1_RESUME_TRACK),
-	INT_ENTRY(9, MSU1_VOLUME),
-	INT_ENTRY(9, MSU1_CONTROL),
-	INT_ENTRY(9, MSU1_AUDIO_POS),
-	INT_ENTRY(9, MSU1_RESUME_POS)
-};
-
-#undef STRUCT
 #define STRUCT	struct SnapshotScreenshotInfo
 
 static FreezeData	SnapScreenshot[] =
@@ -1232,9 +1215,6 @@ void S9xFreezeToStream (STREAM stream)
 	if (Settings.BS)
 		FreezeStruct(stream, "BSX", &BSX, SnapBSX, COUNT(SnapBSX));
 
-	if (Settings.MSU1)
-		FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
-
 	if (Settings.SnapshotScreenshots)
 	{
 		SnapshotScreenshotInfo	*ssi = new SnapshotScreenshotInfo;
@@ -1335,7 +1315,6 @@ int S9xUnfreezeFromStream (STREAM stream)
 	uint8	*local_srtc          = NULL;
 	uint8	*local_rtc_data      = NULL;
 	uint8	*local_bsx_data      = NULL;
-	uint8	*local_msu1_data     = NULL;
 	uint8	*local_screenshot    = NULL;
 	uint8	*local_movie_data    = NULL;
 
@@ -1473,10 +1452,6 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (result != SUCCESS && Settings.BS)
 			break;
 
-		result = UnfreezeStructCopy(stream, "MSU", &local_msu1_data, SnapMSU1, COUNT(SnapMSU1), version);
-		if (result != SUCCESS && Settings.MSU1)
-			break;
-
 		result = UnfreezeStructCopy(stream, "SHO", &local_screenshot, SnapScreenshot, COUNT(SnapScreenshot), version);
 
 		SnapshotMovieInfo	mi;
@@ -1549,11 +1524,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (local_fillram)
 			memcpy(Memory.FillRAM, local_fillram, 0x8000);
 
-        if(version < SNAPSHOT_VERSION_BAPU) {
-            printf("Using Blargg APU snapshot loading (snapshot version %d, current is %d)\n...", version, SNAPSHOT_VERSION);
-            S9xAPULoadBlarggState(local_apu_sound);
-        } else
-		    S9xAPULoadState(local_apu_sound);
+		S9xAPULoadState(local_apu_sound);
 
 		struct SControlSnapshot	ctl_snap;
 		UnfreezeStructFromCopy(&ctl_snap, SnapControls, COUNT(SnapControls), local_control_data, version);
@@ -1604,9 +1575,6 @@ int S9xUnfreezeFromStream (STREAM stream)
 
 		if (local_bsx_data)
 			UnfreezeStructFromCopy(&BSX, SnapBSX, COUNT(SnapBSX), local_bsx_data, version);
-
-		if (local_msu1_data)
-			UnfreezeStructFromCopy(&MSU1, SnapMSU1, COUNT(SnapMSU1), local_msu1_data, version);
 
 		if (version < SNAPSHOT_VERSION_IRQ)
 		{
@@ -1701,9 +1669,6 @@ int S9xUnfreezeFromStream (STREAM stream)
 
 		if (local_bsx_data)
 			S9xBSXPostLoadState();
-
-		if (local_msu1_data)
-			S9xMSU1PostLoadState();
 
 		if (local_movie_data)
 		{
@@ -2268,4 +2233,28 @@ static void UnfreezeStructFromCopy (void *sbase, FreezeData *fields, int num_fie
 			*((pint *) (addr)) = (pint) (relativeTo + relativeAddr);
 		}
 	}
+}
+
+bool8 S9xSPCDump (const char *filename)
+{
+	FILE	*fs;
+	uint8	buf[SNES_SPC::spc_file_size];
+	size_t	ignore;
+
+	fs = fopen(filename, "wb");
+	if (!fs)
+		return (FALSE);
+
+	S9xSetSoundMute(TRUE);
+
+	spc_core->init_header(buf);
+	spc_core->save_spc(buf);
+
+	ignore = fwrite(buf, SNES_SPC::spc_file_size, 1, fs);
+
+	fclose(fs);
+
+	S9xSetSoundMute(FALSE);
+
+	return (TRUE);
 }

@@ -67,15 +67,6 @@ bool8 LoadZip (const char *zipname, uint32 *TotalFileSize, uint8 *buffer)
 		port = unzGoToNextFile(file);
 	}
 
-	int len = strlen(zipname);
-	if (!(port == UNZ_END_OF_LIST_OF_FILE || port == UNZ_OK) || filesize == 0 ||
-		(len > 5 && strcasecmp(zipname + len - 5, ".msu1") == 0 && strcasecmp(filename, "program.rom") != 0))
-	{
-		if (unzClose(file) != UNZ_OK)
-			assert(FALSE);
-		return (FALSE);
-	}
-
 	// find extension
 	char	tmp[2] = { 0, 0 };
 	char	*ext = strrchr(filename, '.');

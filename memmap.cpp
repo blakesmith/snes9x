@@ -1260,7 +1260,7 @@ uint32 CMemory::FileLoader (uint8 *buffer, const char *filename, uint32 maxsize)
 	_makepath(fname, drive, dir, name, exts);
 
 	int	nFormat = FILE_DEFAULT;
-	if (strcasecmp(ext, "zip") == 0 || strcasecmp(ext, "msu1") == 0)
+	if (strcasecmp(ext, "zip") == 0)
 		nFormat = FILE_ZIP;
 	else
 	if (strcasecmp(ext, "jma") == 0)
@@ -2234,7 +2234,6 @@ void CMemory::InitROM (void)
 	Settings.SETA = 0;
 	Settings.SRTC = FALSE;
 	Settings.BS = FALSE;
-	Settings.MSU1 = FALSE;
 
 	SuperFX.nRomBanks = CalculatedSize >> 15;
 
@@ -2409,9 +2408,6 @@ void CMemory::InitROM (void)
 			Settings.C4 = TRUE;
 			break;
 	}
-
-	// MSU1
-	Settings.MSU1 = S9xMSU1ROMExists();
 
 	//// Map memory and calculate checksum
 
@@ -3490,9 +3486,6 @@ const char * CMemory::KartContents (void)
 	else
 		strcpy(chip, "");
 
-	if (Settings.MSU1)
-		sprintf(chip + strlen(chip), "+MSU-1");
-
 	sprintf(str, "%s%s", contents[(ROMType & 0xf) % 3], chip);
 
 	return (str);
@@ -3602,22 +3595,91 @@ void CMemory::ApplyROMFixes (void)
 	if (Settings.DisableGameSpecificHacks)
 		return;
 
-	// APU timing hacks
-	if (match_na("CIRCUIT USA"))
-		Timings.APUSpeedup = 3;
+	Timings.APUSpeedup = 0;
+	Timings.APUAllowTimeOverflow = FALSE;
+
+	if (!Settings.DisableGameSpecificHacks)
+	{
+		if (match_id("AVCJ"))                                      // Rendering Ranger R2
+			Timings.APUSpeedup = 4;
+		if (match_na("CIRCUIT USA"))
+			Timings.APUSpeedup = 3;
+
+		if (match_na("GAIA GENSOUKI 1 JPN")                     || // Gaia Gensouki
+			match_id("JG  ")                                    || // Illusion of Gaia
+			match_id("CQ  ")                                    || // Stunt Race FX
+			match_na("SOULBLADER - 1")                          || // Soul Blader
+			match_na("SOULBLAZER - 1 USA")                      || // Soul Blazer
+			match_na("SLAP STICK 1 JPN")                        || // Slap Stick
+			match_id("E9 ")                                     || // Robotrek
+			match_nn("ACTRAISER")                               || // Actraiser
+			match_nn("ActRaiser-2")                             || // Actraiser 2
+			match_id("AQT")                                     || // Tenchi Souzou, Terranigma
+			match_id("ATV")                                     || // Tales of Phantasia
+			match_id("ARF")                                     || // Star Ocean
+			match_id("APR")                                     || // Zen-Nippon Pro Wrestling 2 - 3-4 Budoukan
+			match_id("A4B")                                     || // Super Bomberman 4
+			match_id("Y7 ")                                     || // U.F.O. Kamen Yakisoban - Present Ban
+			match_id("Y9 ")                                     || // U.F.O. Kamen Yakisoban - Shihan Ban
+			match_id("APB")                                     || // Super Bomberman - Panic Bomber W
+			match_na("DARK KINGDOM")                            || // Dark Kingdom
+			match_na("ZAN3 SFC")                                || // Zan III Spirits
+			match_na("HIOUDEN")                                 || // Hiouden - Mamono-tachi Tono Chikai
+			match_na("\xC3\xDD\xBC\xC9\xB3\xC0")                || // Tenshi no Uta
+			match_na("FORTUNE QUEST")                           || // Fortune Quest - Dice wo Korogase
+			match_na("FISHING TO BASSING")                      || // Shimono Masaki no Fishing To Bassing
+			match_na("OHMONO BLACKBASS")                        || // Oomono Black Bass Fishing - Jinzouko Hen
+			match_na("MASTERS")                                 || // Harukanaru Augusta 2 - Masters
+			match_na("SFC \xB6\xD2\xDD\xD7\xB2\xC0\xDE\xB0")    || // Kamen Rider
+			match_na("ZENKI TENCHIMEIDOU")					    || // Kishin Douji Zenki - Tenchi Meidou
+			match_nn("TokyoDome '95Battle 7")                   || // Shin Nippon Pro Wrestling Kounin '95 - Tokyo Dome Battle 7
+			match_nn("SWORD WORLD SFC")                         || // Sword World SFC/2
+			match_nn("LETs PACHINKO(")                          || // BS Lets Pachinko Nante Gindama 1/2/3/4
+			match_nn("THE FISHING MASTER")                      || // Mark Davis The Fishing Master
+			match_nn("Parlor")                                  || // Parlor mini/2/3/4/5/6/7, Parlor Parlor!/2/3/4/5
+			match_na("HEIWA Parlor!Mini8")                      || // Parlor mini 8
+			match_nn("SANKYO Fever! \xCC\xA8\xB0\xCA\xDE\xB0!"))   // SANKYO Fever! Fever!
+			Timings.APUSpeedup = 1;
+		if (match_na ("EARTHWORM JIM 2")						|| // Earthworm Jim 2
+			match_na ("NBA Hangtime")							|| // NBA Hang Time
+			match_na ("MSPACMAN")								|| // Ms Pacman
+			match_na ("THE MASK")								|| // The Mask
+			match_na ("PRIMAL RAGE")							|| // Primal Rage
+			match_na ("PORKY PIGS HAUNTED")						||
+			match_na ("DOOM TROOPERS"))							   // Doom Troopers
+			Timings.APUAllowTimeOverflow = TRUE;
+	}
 
 	S9xAPUTimingSetSpeedup(Timings.APUSpeedup);
+    S9xAPUAllowTimeOverflow(Timings.APUAllowTimeOverflow);
 
-	// Other timing hacks
-	// The delay to sync CPU and DMA which Snes9x does not emulate.
-	// Some games need really severe delay timing...
-	if (match_na("BATTLE GRANDPRIX")) // Battle Grandprix
-		Timings.DMACPUSync = 20;
-	else if (match_na("KORYU NO MIMI ENG")) // Koryu no Mimi translation by rpgone)
-	{
-		// An infinite loop reads $4210 and checks NMI flag. This only works if LDA instruction executes before the NMI triggers,
-		// which doesn't work very well with s9x's default DMA timing.
-		Timings.DMACPUSync = 20;
+	//// Other timing hacks :(
+
+	Timings.HDMAStart   = SNES_HDMA_START_HC + Settings.HDMATimingHack - 100;
+	Timings.HBlankStart = SNES_HBLANK_START_HC + Timings.HDMAStart - SNES_HDMA_START_HC;
+	Timings.IRQTriggerCycles = 10;
+
+	if (!Settings.DisableGameSpecificHacks) {
+		// The delay to sync CPU and DMA which Snes9x cannot emulate.
+		// Some games need really severe delay timing...
+		if (match_na("BATTLE GRANDPRIX")) // Battle Grandprix
+		{
+			Timings.DMACPUSync = 20;
+			printf("DMA sync: %d\n", Timings.DMACPUSync);
+		}
+		else if (match_na("KORYU NO MIMI ENG")) // Koryu no Mimi translation by rpgone)
+		{
+			// An infinite loop reads $4210 and checks NMI flag. This only works if LDA instruction executes before the NMI triggers,
+			// which doesn't work very well with s9x's default DMA timing.
+			Timings.DMACPUSync = 20;
+			printf("DMA sync: %d\n", Timings.DMACPUSync);
+		}
+		else if (match_na("HU TENGAI MAKYO ZERO"))
+		{
+			Settings.BlockInvalidVRAMAccess = FALSE;
+			Timings.DMACPUSync = 20;
+			printf("DMA sync: %d\n", Timings.DMACPUSync);
+		}
 	}
 
 	if (Timings.DMACPUSync != 18)
@@ -4537,23 +4599,4 @@ void CMemory::CheckForAnyPatch (const char *rom_filename, bool8 header, int32 &r
 		if (flag)
 			return;
 	}
-
-#ifdef UNZIP_SUPPORT
-	// Mercurial Magic (MSU-1 distribution pack)
-	if (strcasecmp(ext, "msu1") && strcasecmp(ext, ".msu1"))	// ROM was *NOT* loaded from a .msu1 pack
-	{
-		Stream *s = S9xMSU1OpenFile("patch.bps", TRUE);
-		if (s)
-		{
-			printf("Using BPS patch %s.msu1", name);
-			ret = ReadBPSPatch(s, offset, rom_size);
-			s->closeStream();
-
-			if (ret)
-				printf("!\n");
-			else
-				printf(" failed!\n");
-		}
-	}
-#endif
 }
