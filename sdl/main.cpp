@@ -1,6 +1,8 @@
+#include "input.h"
+#include "sound.h"
+#include "menu.h"
+#include "video.h"
 #include "util.h"
-
-#include "control.h"
 
 #include "port.h"
 
@@ -12,220 +14,29 @@
 #include "memmap.h"
 #include "controls.h"
 #include "snapshot.h"
-#include "movie.h"
 
 #include <SDL.h>
 
-#ifdef _MSC_VER
+#include <libintl.h>
+#include <sys/stat.h>
 
-#include <chrono>
-#include <thread>
-int usleep(uint32_t usec) {
-    std::this_thread::sleep_for(std::chrono::microseconds(usec));
-    return 0;
-}
+#define _(s) gettext(s)
 
-#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
-
-int gettimeofday(struct timeval *tv, struct timezone *tz)
-{
-    FILETIME ft;
-    unsigned __int64 tmpres = 0;
-    static int tzflag = 0;
-
-    if (NULL != tv)
-    {
-        GetSystemTimeAsFileTime(&ft);
-
-        tmpres |= ft.dwHighDateTime;
-        tmpres <<= 32;
-        tmpres |= ft.dwLowDateTime;
-
-        tmpres /= 10;  /*convert into microseconds*/
-        /*converting file time to unix epoch*/
-        tmpres -= DELTA_EPOCH_IN_MICROSECS;
-        tv->tv_sec = (long)(tmpres / 1000000UL);
-        tv->tv_usec = (long)(tmpres % 1000000UL);
-    }
-
-    if (NULL != tz)
-    {
-        if (!tzflag)
-        {
-            _tzset();
-            tzflag++;
-        }
-        tz->tz_minuteswest = _timezone / 60;
-        tz->tz_dsttime = _daylight;
-    }
-
-    return 0;
-}
-
-#else
-
-#include <sys/time.h>
-#include <unistd.h>
-
-#endif
-
-static bool term = false;
+bool s9xTerm = false;
 static ConfigFile global_conf;
 static char saveFilename[PATH_MAX + 1];
 
-void S9xSetPause(uint32) {
+char s9xBaseDir[PATH_MAX + 1] = {0};
+char romFilename[PATH_MAX + 1] = {0};
+char snapshotFilename[PATH_MAX + 1] = {0};
+char defaultDir[PATH_MAX + 1] {0};
 
-}
-
-void S9xClearPause(uint32) {
-
-}
-
-void S9xExit() {
-    S9xMovieShutdown();
-
-    S9xSetSoundMute(TRUE);
-    Settings.StopEmulation = TRUE;
-
-    Memory.SaveSRAM(S9xGetFilename(".srm", SRAM_DIR));
-    S9xResetSaveTimer(FALSE);
-    S9xSaveCheatFile(S9xGetFilename(".cht", CHEAT_DIR));
-    S9xUnmapAllControls();
-    S9xDeinitDisplay();
-    Memory.Deinit();
-    S9xDeinitAPU();
-
-    SDL_Quit();
-
-    exit(0);
-}
-
-void S9xExtraUsage(void) {
-
-}
-
-void S9xParseArg(char **, int &, int) {
-
-}
-
-void S9xParsePortConfig(ConfigFile &conf, int pass) {
-    global_conf = conf;
-    global_conf.LoadFile(saveFilename);
-
-    s9x_base_dir                   = conf.GetStringDup("BaseDir",             default_dir);
-    snapshot_filename              = conf.GetStringDup("SnapshotFilename",    NULL);
-    play_smv_filename              = conf.GetStringDup("PlayMovieFilename",   NULL);
-    record_smv_filename            = conf.GetStringDup("RecordMovieFilename", NULL);
-}
-
-void S9xSyncSpeed() {
-    if (Settings.SoundSync)
-    {
-        return;
-    }
-
-    if (Settings.DumpStreams)
-        return;
-
-    if (Settings.HighSpeedSeek > 0)
-        Settings.HighSpeedSeek--;
-
-    if (Settings.TurboMode)
-    {
-        if ((++IPPU.FrameSkip >= Settings.TurboSkipFrames) && !Settings.HighSpeedSeek)
-        {
-            IPPU.FrameSkip = 0;
-            IPPU.SkippedFrames = 0;
-            IPPU.RenderThisFrame = TRUE;
-        }
-        else
-        {
-            IPPU.SkippedFrames++;
-            IPPU.RenderThisFrame = FALSE;
-        }
-
-        return;
-    }
-
-    static struct timeval	next1 = { 0, 0 };
-    struct timeval			now;
-
-    while (gettimeofday(&now, NULL) == -1) ;
-
-    // If there is no known "next" frame, initialize it now.
-    if (next1.tv_sec == 0)
-    {
-        next1 = now;
-        next1.tv_usec++;
-    }
-
-    // If we're on AUTO_FRAMERATE, we'll display frames always only if there's excess time.
-    // Otherwise we'll display the defined amount of frames.
-    unsigned	limit = (Settings.SkipFrames == AUTO_FRAMERATE) ? (timercmp(&next1, &now, <) ? 10 : 1) : Settings.SkipFrames;
-
-    IPPU.RenderThisFrame = (++IPPU.SkippedFrames >= limit) ? TRUE : FALSE;
-
-    if (IPPU.RenderThisFrame)
-        IPPU.SkippedFrames = 0;
-    else
-    {
-        // If we were behind the schedule, check how much it is.
-        if (timercmp(&next1, &now, <))
-        {
-            unsigned	lag = (now.tv_sec - next1.tv_sec) * 1000000 + now.tv_usec - next1.tv_usec;
-            if (lag >= 500000)
-            {
-                // More than a half-second behind means probably pause.
-                // The next line prevents the magic fast-forward effect.
-                next1 = now;
-            }
-        }
-    }
-
-    // Delay until we're completed this frame.
-    // Can't use setitimer because the sound code already could be using it. We don't actually need it either.
-    while (timercmp(&next1, &now, >))
-    {
-        // If we're ahead of time, sleep a while.
-        unsigned	timeleft = (next1.tv_sec - now.tv_sec) * 1000000 + next1.tv_usec - now.tv_usec;
-        usleep(timeleft);
-
-        while (gettimeofday(&now, NULL) == -1) ;
-        // Continue with a while-loop because usleep() could be interrupted by a signal.
-    }
-
-    // Calculate the timestamp of the next frame.
-    next1.tv_usec += Settings.FrameTime;
-    if (next1.tv_usec >= 1000000)
-    {
-        next1.tv_sec += next1.tv_usec / 1000000;
-        next1.tv_usec %= 1000000;
-    }
-}
-
-void S9xAutoSaveSRAM() {
-    Memory.SaveSRAM(S9xGetFilename(".srm", SRAM_DIR));
-}
-
-void S9xProcessEvents (bool8) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        switch(event.type) {
-            case SDL_QUIT: term = true; break;
-            case SDL_KEYDOWN:
-                S9xReportButton(event.key.keysym.sym | (event.key.keysym.mod << 10), true);
-                break;
-            case SDL_KEYUP:
-                S9xReportButton(event.key.keysym.sym | (event.key.keysym.mod << 10), false);
-                break;
-            default: break;
-        }
-    }
-}
-
-void S9xMessage(int, int, const char *msg) {
-    printf("%s\n", msg);
-}
+static void quickLoadState(int n);
+static void quickSaveState(int n);
+static void enterMainMenu();
+static MenuResult enterSaveStateMenu();
+static MenuResult enterLoadStateMenu();
+static MenuResult enterSettingsMenu();
 
 int main(int argc, char *argv[]) {
     if (argc < 2)
@@ -239,8 +50,8 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
-    snprintf(default_dir, PATH_MAX + 1, "%s%s%s", homedir, SLASH_STR, ".snes9x");
-    s9x_base_dir = default_dir;
+    snprintf(defaultDir, PATH_MAX + 1, "%s%s%s", homedir, SLASH_STR, ".snes9x");
+    strncpy(s9xBaseDir, defaultDir, PATH_MAX + 1);
 
     memset(&Settings, 0, sizeof(Settings));
     Settings.MouseMaster = TRUE;
@@ -251,9 +62,9 @@ int main(int argc, char *argv[]) {
     Settings.FrameTimeNTSC = 16667;
     Settings.SixteenBitSound = TRUE;
     Settings.Stereo = TRUE;
-    Settings.SoundPlaybackRate = 48000;
-    Settings.SoundInputRate = 31950;
-    Settings.SupportHiRes = TRUE;
+    Settings.SoundPlaybackRate = 32000;
+    Settings.SoundInputRate = 32000;
+    Settings.SupportHiRes = FALSE;
     Settings.Transparency = TRUE;
     Settings.AutoDisplayMessages = TRUE;
     Settings.InitialInfoStringTimeout = 120;
@@ -262,10 +73,13 @@ int main(int argc, char *argv[]) {
     Settings.StopEmulation = TRUE;
     Settings.WrongMovieStateProtection = TRUE;
     Settings.DumpStreamsMaxFrames = -1;
-    Settings.StretchScreenshots = 1;
-    Settings.SnapshotScreenshots = TRUE;
+    Settings.StretchScreenshots = 0;
+    Settings.SnapshotScreenshots = FALSE;
     Settings.SkipFrames = AUTO_FRAMERATE;
     Settings.TurboSkipFrames = 15;
+    Settings.FastSavestates = TRUE;
+    Settings.DontSaveOopsSnapshot = TRUE;
+    Settings.AutoSaveDelay = 5;
 #if 0
     Settings.MaxSpriteTilesPerLine = 34;
     Settings.OneClockCycle = 3;
@@ -280,10 +94,11 @@ int main(int argc, char *argv[]) {
     snprintf(saveFilename, PATH_MAX + 1, "%s%ssnes9x.conf", S9xGetDirectory(DEFAULT_DIR), SLASH_STR);
 
     S9xLoadConfigFiles(argv, argc);
-    rom_filename = S9xParseArgs(argv, argc);
+    const char *romfn = S9xParseArgs(argv, argc);
+    if (romfn) strncpy(romFilename, romfn, PATH_MAX + 1);
     S9xDeleteCheats();
 
-    make_snes9x_dirs();
+    MakeS9xDirs();
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "Snes9x: Unable to initialize SDL.\nExiting...\n");
@@ -300,12 +115,13 @@ int main(int argc, char *argv[]) {
     }
 
     S9xInitSound(128, 0);
+    SoundPause();
     S9xSetSoundMute(TRUE);
 
     S9xReportControllers();
 
-    uint32	saved_flags = CPU.Flags;
-    bool8	loaded = FALSE;
+    uint32 saved_flags = CPU.Flags;
+    bool8 loaded = FALSE;
 
     if (Settings.Multi)
     {
@@ -313,8 +129,8 @@ int main(int argc, char *argv[]) {
 
         if (!loaded)
         {
-            char	s1[PATH_MAX + 1], s2[PATH_MAX + 1];
-            char	drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], fname[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
+            char s1[PATH_MAX + 1], s2[PATH_MAX + 1];
+            char drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], fname[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
 
             s1[0] = s2[0] = 0;
 
@@ -343,16 +159,16 @@ int main(int argc, char *argv[]) {
             loaded = Memory.LoadMultiCart(s1, s2);
         }
     }
-    else if (rom_filename)
+    else if (romFilename)
     {
-        loaded = Memory.LoadROM(rom_filename);
+        loaded = Memory.LoadROM(romFilename);
 
-        if (!loaded && rom_filename[0])
+        if (!loaded && romFilename[0])
         {
-            char	s[PATH_MAX + 1];
-            char	drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], fname[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
+            char s[PATH_MAX + 1];
+            char drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], fname[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
 
-            _splitpath(rom_filename, drive, dir, fname, ext);
+            _splitpath(romFilename, drive, dir, fname, ext);
             snprintf(s, PATH_MAX + 1, "%s%s%s", S9xGetDirectory(ROM_DIR), SLASH_STR, fname);
             if (ext[0] && (strlen(s) <= PATH_MAX - 1 - strlen(ext)))
             {
@@ -367,7 +183,8 @@ int main(int argc, char *argv[]) {
     if (!loaded)
     {
         fprintf(stderr, "Error opening the ROM file.\n");
-        goto quit;
+        S9xExit();
+        return 1;
     }
 
     S9xDeleteCheats();
@@ -390,48 +207,23 @@ int main(int argc, char *argv[]) {
     S9xSetupDefaultKeymap();
     S9xTextMode();
 
-    if (play_smv_filename)
-    {
-        uint32	flags = CPU.Flags & (DEBUG_MODE_FLAG | TRACE_FLAG);
-        if (S9xMovieOpen(play_smv_filename, TRUE) != SUCCESS)
-            goto quit;
-        CPU.Flags |= flags;
-    }
-    else if (record_smv_filename)
-    {
-        uint32	flags = CPU.Flags & (DEBUG_MODE_FLAG | TRACE_FLAG);
-        if (S9xMovieCreate(record_smv_filename, 0xFF, MOVIE_OPT_FROM_RESET, NULL, 0) != SUCCESS)
-            goto quit;
-        CPU.Flags |= flags;
-    }
-    else
-    {
-        if (snapshot_filename)
-        {
-            uint32	flags = CPU.Flags & (DEBUG_MODE_FLAG | TRACE_FLAG);
-            if (!S9xUnfreezeGame(snapshot_filename))
-                goto quit;
-            CPU.Flags |= flags;
-        }
+    if (snapshotFilename[0] && !S9xUnfreezeGame(snapshotFilename)) {
+        S9xExit();
+        return 1;
     }
 
     S9xGraphicsMode();
 
+#ifndef GCW_ZERO
     sprintf(String, "\"%s\" %s: %s", Memory.ROMName, TITLE, VERSION);
     S9xSetTitle(String);
-
-#ifdef JOYSTICK_SUPPORT
-    uint32	JoypadSkip = 0;
 #endif
 
     S9xSetSoundMute(FALSE);
+    SoundResume();
 
-#ifdef NETPLAY_SUPPORT
-    bool8	NP_Activated = Settings.NetPlay;
-#endif
-
-    term = false;
-    while (!term)
+    s9xTerm = false;
+    while (!s9xTerm)
     {
         if (!Settings.Paused)
         {
@@ -452,20 +244,231 @@ int main(int argc, char *argv[]) {
             S9xSetSoundMute(FALSE);
     }
 
-    Settings.StopEmulation = TRUE;
-
-    if (!Settings.StopEmulation)
-    {
-        Memory.SaveSRAM (S9xGetFilename (".srm", SRAM_DIR));
-        S9xSaveCheatFile (S9xGetFilename (".cht", CHEAT_DIR));
-    }
-
-    S9xMovieShutdown (); // must happen before saving config
-
+    global_conf.SetBool("Video::Fullscreen", VideoSettings.Fullscreen);
+    global_conf.SetBool("Display::DisplayFrameRate", Settings.DisplayFrameRate);
     global_conf.SaveTo(saveFilename);
 
-quit:
     S9xExit();
 
     return 0;
+}
+
+void S9xExit() {
+    S9xSetSoundMute(TRUE);
+    SoundPause();
+
+    Settings.StopEmulation = TRUE;
+
+    Memory.SaveSRAM(S9xGetFilename(".srm", SRAM_DIR));
+    S9xResetSaveTimer(FALSE);
+    S9xSaveCheatFile(S9xGetFilename(".cht", CHEAT_DIR));
+    S9xUnmapAllControls();
+    S9xDeinitDisplay();
+    Memory.Deinit();
+    S9xDeinitAPU();
+
+    SoundClose();
+    SDL_Quit();
+
+    exit(0);
+}
+
+void S9xExtraUsage(void) {
+
+}
+
+void S9xParseArg(char **, int &, int) {
+
+}
+
+void S9xParsePortConfig(ConfigFile &conf, int pass) {
+    global_conf = conf;
+    global_conf.LoadFile(saveFilename);
+
+    VideoSettings.Fullscreen = conf.GetBool("Video::Fullscreen", true);
+
+    const char *dir = global_conf.GetString("BaseDir", defaultDir);
+    if (dir) strncpy(s9xBaseDir, dir, PATH_MAX + 1);
+    dir = global_conf.GetString("SnapshotFilename", NULL);
+    if (dir) strncpy(snapshotFilename, dir, PATH_MAX + 1);
+}
+
+void S9xAutoSaveSRAM() {
+    Memory.SaveSRAM(S9xGetFilename(".srm", SRAM_DIR));
+}
+
+void S9xProcessEvents (bool8) {
+    SDL_Event event;
+    bool enterMenu = false;
+    while (SDL_PollEvent(&event)) {
+        switch(event.type) {
+        case SDL_QUIT: s9xTerm = true; break;
+        case SDL_KEYDOWN:
+            if (event.key.keysym.sym ==
+#ifdef GCW_ZERO
+                SDLK_HOME
+#else
+                SDLK_ESCAPE
+#endif
+                ) {
+                enterMenu = true;
+                break;
+            }
+            S9xReportButton(event.key.keysym.sym
+#ifndef GCW_ZERO
+                | (event.key.keysym.mod << 10)
+#endif
+                , true);
+            break;
+        case SDL_KEYUP:
+            S9xReportButton(event.key.keysym.sym
+#ifndef GCW_ZERO
+                | (event.key.keysym.mod << 10)
+#endif
+                , false);
+            break;
+        default: break;
+        }
+    }
+    if (enterMenu) {
+        Settings.Paused = TRUE;
+        SoundMute();
+
+        VideoFreeze();
+        VideoSetOriginResolution();
+
+        enterMainMenu();
+
+        VideoClearCache();
+        VideoUnfreeze();
+        SoundUnmute();
+        Settings.Paused = FALSE;
+    }
+}
+
+void S9xMessage(int, int, const char *msg) {
+    printf("%s\n", msg);
+}
+
+static void buildStateFilename(int n, char def[_MAX_FNAME + 1], char filename[PATH_MAX + 1]) {
+    char drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], ext[_MAX_EXT + 1];
+
+    _splitpath(Memory.ROMFilename, drive, dir, def, ext);
+    snprintf(filename, PATH_MAX + 1, "%s%s%s.%03d", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, n);
+}
+
+static void quickLoadState(int n) {
+    char filename[PATH_MAX + 1];
+    char def[_MAX_FNAME + 1];
+    buildStateFilename(n, def, filename);
+
+    if (S9xUnfreezeGame(filename)) {
+        char buf[256];
+        snprintf(buf, 256, "%s.%03d loaded", def, n);
+        S9xSetInfoString(buf);
+    } else
+        S9xMessage(S9X_ERROR, S9X_FREEZE_FILE_NOT_FOUND, "Freeze file not found");
+}
+
+static void quickSaveState(int n) {
+    char filename[PATH_MAX + 1];
+    char def[_MAX_FNAME + 1];
+    buildStateFilename(n, def, filename);
+
+    if (S9xFreezeGame(filename)) {
+        strncat(filename, ".png", PATH_MAX);
+        VideoTakeScreenshot(filename);
+        char buf[256];
+        snprintf(buf, 256, "%s.%03d saved", def, n);
+        S9xSetInfoString(buf);
+    } else
+        S9xMessage(S9X_ERROR, S9X_FREEZE_FILE_NOT_FOUND, "Unable to write file");
+}
+
+static void enterMainMenu() {
+    const MenuItem items[] = {
+        { MIT_CLICK, NULL, _("Save state"), 0, 0,
+          [](const MenuItem*)->MenuResult { return enterSaveStateMenu(); } },
+        { MIT_CLICK, NULL, _("Load state"), 0, 0,
+          [](const MenuItem*)->MenuResult { return enterLoadStateMenu(); } },
+        { MIT_CLICK, NULL, _("Settings"), 0, 0,
+          [](const MenuItem*)->MenuResult { return enterSettingsMenu(); } },
+        { MIT_CLICK, NULL, _("Reset"), 0, 0,
+          [](const MenuItem*)->MenuResult { S9xReset(); return MR_LEAVE; } },
+        { MIT_CLICK, NULL, _("Quit"), 0, 0,
+          [](const MenuItem*)->MenuResult { s9xTerm = true; return MR_LEAVE; } },
+        { MIT_END }
+    };
+    MenuRun(items, 120, 0, 80, 0, 0);
+}
+
+static MenuResult enterSaveStateMenu() {
+    MenuItem items[11] = {};
+    char text[10][64];
+    for (int i = 0; i < 10; ++i) {
+        items[i].type = MIT_CLICK;
+        snprintf(text[i], 64, _("Save to slot %d"), i);
+        items[i].text = text[i];
+        items[i].customData = (void*)(uintptr_t)i;
+        items[i].triggerFunc = [](const MenuItem *item)->MenuResult {
+            quickSaveState((int)(uintptr_t)item->customData);
+            return MR_LEAVE;
+        };
+    }
+    items[10].type = MIT_END;
+    if (MenuRun(items, 80, 0, 70, 0, 0) == MR_LEAVE) return MR_LEAVE;
+    return MR_NONE;
+}
+
+static MenuResult enterLoadStateMenu() {
+    char filename[PATH_MAX + 1];
+    char drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], def[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
+    _splitpath(Memory.ROMFilename, drive, dir, def, ext);
+
+    MenuItem items[11] = {};
+    char text[10][64];
+    for (int i = 0; i < 10; ++i) {
+        items[i].type = MIT_CLICK;
+        snprintf(filename, PATH_MAX + 1, "%s%s%s.%03d", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, i);
+        struct stat st = {};
+        if (stat(filename, &st) != 0 || !S_ISREG(st.st_mode)) {
+            snprintf(text[i], 64, _("Empty slot %d"), i);
+            items[i].triggerFunc = NULL;
+            items[i].drawFunc = NULL;
+        } else {
+            snprintf(text[i], 64, _("Load from slot %d"), i);
+            items[i].customData = (void*)(uintptr_t)i;
+            items[i].triggerFunc = [](const MenuItem *item)->MenuResult {
+                quickLoadState((int)(uintptr_t)item->customData);
+                return MR_LEAVE;
+            };
+            items[i].drawFunc = [](const MenuItem *item, int, bool selected) {
+                if (!selected) return;
+                int n = (int)(uintptr_t)item->customData;
+                char filename[PATH_MAX + 1];
+                char drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], def[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
+                _splitpath(Memory.ROMFilename, drive, dir, def, ext);
+                snprintf(filename, PATH_MAX + 1, "%s%s%s.%03d.png", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, n);
+                VideoImageData vid = VideoLoadImageFile(filename);
+                if (vid.buffer) {
+                    VideoDrawImage(180, 64, &vid);
+                    VideoFreeImage(&vid);
+                }
+            };
+        }
+        items[i].text = text[i];
+    }
+    items[10].type = MIT_END;
+    if (MenuRun(items, 80, 0, 70, 0, 0) == MR_LEAVE) return MR_LEAVE;
+    return MR_NONE;
+}
+
+static MenuResult enterSettingsMenu() {
+    const MenuItem items[] = {
+        { MIT_BOOL, &VideoSettings.Fullscreen, _("Fullscreen") },
+        { MIT_BOOL, &Settings.DisplayFrameRate, _("Show FPS") },
+        { MIT_END }
+    };
+    MenuRun(items, 100, 180, 80, 0, 0);
+    return MR_NONE;
 }

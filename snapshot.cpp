@@ -1637,7 +1637,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 
 		S9xGraphicsScreenResize();
 		
-		if (Settings.FastSavestates == 0)
+		if (!fast)
 			memset(GFX.Screen,0,GFX.Pitch * MAX_SNES_HEIGHT);
 
 		// TODO: this seems to be a relic from 1.43 changes, completely remove if no issues in the future
@@ -1727,9 +1727,11 @@ int S9xUnfreezeFromStream (STREAM stream)
 				}
 			}
 
-			// black out what we might have missed
-			for (uint32 y = IPPU.RenderedScreenHeight; y < (uint32) (IMAGE_HEIGHT); y++)
-				memset(GFX.Screen + y * GFX.RealPPL, 0, GFX.RealPPL * 2);
+			if (!fast) {
+				// black out what we might have missed
+				for (uint32 y = IPPU.RenderedScreenHeight; y < (uint32)(IMAGE_HEIGHT); y++)
+					memset(GFX.Screen + y*GFX.RealPPL, 0, GFX.RealPPL*2);
+			}
 
 			delete ssi;
 		}

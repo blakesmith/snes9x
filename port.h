@@ -133,21 +133,23 @@ typedef size_t					pint;
 #endif
 #endif
 
+#define S9xDisplayString	DisplayStringFromBottom
 #ifndef __WIN32__
 void _splitpath (const char *, char *, char *, char *, char *);
 void _makepath (char *, const char *, const char *, const char *, const char *);
-#define S9xDisplayString	DisplayStringFromBottom
 #else   // __WIN32__
+#ifndef snprintf
 #define snprintf _snprintf
+#endif
+#ifndef strcasecmp
 #define strcasecmp	stricmp
+#endif
+#ifndef strncasecmp
 #define strncasecmp	strnicmp
+#endif
 #ifndef __LIBRETRO__
-void WinDisplayStringFromBottom(const char *string, int linesFromBottom, int pixelsFromLeft, bool allowWrap);
-#define S9xDisplayString	WinDisplayStringFromBottom
 void SetInfoDlgColor(unsigned char, unsigned char, unsigned char);
 #define SET_UI_COLOR(r,g,b) SetInfoDlgColor(r,g,b)
-#else   // __LIBRETRO__
-#define S9xDisplayString	DisplayStringFromBottom
 #endif  // __LIBRETRO__
 #endif  // __WIN32__
 
