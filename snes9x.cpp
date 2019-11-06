@@ -238,12 +238,9 @@ void S9xLoadConfigFiles (char **argv, int argc)
 	Settings.SixteenBitSound            =  conf.GetBool("Sound::16BitSound",                   true);
 	Settings.Stereo                     =  conf.GetBool("Sound::Stereo",                       true);
 	Settings.ReverseStereo              =  conf.GetBool("Sound::ReverseStereo",                false);
-	Settings.SoundPlaybackRate          =  conf.GetUInt("Sound::Rate",                         48000);
-	Settings.SoundInputRate             =  conf.GetUInt("Sound::InputRate",                    31950);
+	Settings.SoundPlaybackRate          =  conf.GetUInt("Sound::Rate",                         32000);
+	Settings.SoundInputRate             =  conf.GetUInt("Sound::InputRate",                    32000);
 	Settings.Mute                       =  conf.GetBool("Sound::Mute",                         false);
-	Settings.DynamicRateControl         =  conf.GetBool("Sound::DynamicRateControl",           false);
-	Settings.DynamicRateLimit           =  conf.GetInt ("Sound::DynamicRateLimit",             5);
-	Settings.InterpolationMethod        =  conf.GetInt ("Sound::InterpolationMethod",          2);
 
 	// Display
 
@@ -494,11 +491,6 @@ char * S9xParseArgs (char **argv, int argc)
 
 			if (!strcasecmp(argv[i], "-soundsync"))
 				Settings.SoundSync = TRUE;
-			else if (!strcasecmp(argv[i], "-dynamicratecontrol"))
-			{
-				Settings.DynamicRateControl = TRUE;
-				Settings.DynamicRateLimit = 5;
-			}
 			else
 			if (!strcasecmp(argv[i], "-playbackrate"))
 			{
@@ -517,10 +509,8 @@ char * S9xParseArgs (char **argv, int argc)
 				if (i + 1 < argc)
 				{
 					Settings.SoundInputRate = atoi(argv[++i]);
-					if (Settings.SoundInputRate < 31700)
-						Settings.SoundInputRate = 31700;
-					if (Settings.SoundInputRate > 32300)
-						Settings.SoundInputRate = 32300;
+					if (Settings.SoundInputRate < 8192)
+						Settings.SoundInputRate = 8192;
 				}
 				else
 					S9xUsage();
