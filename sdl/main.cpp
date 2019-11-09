@@ -116,7 +116,9 @@ int main(int argc, char *argv[]) {
 
     S9xInitSound(128, 0);
     SoundPause();
-    S9xSetSoundMute(TRUE);
+
+    bool startupWasMuted = Settings.Mute;
+    SoundMute();
 
     S9xReportControllers();
 
@@ -219,7 +221,8 @@ int main(int argc, char *argv[]) {
     S9xSetTitle(String);
 #endif
 
-    S9xSetSoundMute(FALSE);
+    if (!startupWasMuted)
+        SoundUnmute();
     SoundResume();
 
     s9xTerm = false;
@@ -229,27 +232,27 @@ int main(int argc, char *argv[]) {
         {
             S9xMainLoop();
         }
-        if (Settings.Paused)
-            S9xSetSoundMute(TRUE);
 
         if (Settings.Paused)
         {
+            bool8 wasMuted = Settings.Mute;
+            if (!wasMuted)
+                SoundMute();
             S9xProcessEvents(FALSE);
             usleep(100000);
+            if (!Settings.Paused && !wasMuted)
+                SoundUnmute();
         }
-
         S9xProcessEvents(FALSE);
-
-        if (!Settings.Paused)
-            S9xSetSoundMute(FALSE);
     }
 
     if (VideoSettings.FrameRate == 0)
         global_conf.SetString("Settings::FrameSkip", "Auto");
     else
         global_conf.SetInt("Settings::FrameSkip", VideoSettings.FrameRate - 1);
-    global_conf.SetBool("Video::Fullscreen", VideoSettings.Fullscreen);
     global_conf.SetBool("Display::DisplayFrameRate", Settings.DisplayFrameRate);
+    global_conf.SetBool("Video::Fullscreen", VideoSettings.Fullscreen);
+    global_conf.SetBool("Sound::Mute", Settings.Mute);
     global_conf.SetBool("Hack::AllowInvalidVRAMAccess", VideoSettings.AllowInvalidVRAMAccess);
     global_conf.SaveTo(saveFilename);
 
@@ -339,8 +342,8 @@ void S9xProcessEvents (bool8) {
     }
     if (enterMenu) {
         Settings.Paused = TRUE;
-        SoundMute();
 
+        SoundPause(true);
         VideoFreeze();
         VideoSetOriginResolution();
 
@@ -348,7 +351,8 @@ void S9xProcessEvents (bool8) {
 
         VideoClearCache();
         VideoUnfreeze();
-        SoundUnmute();
+        SoundResume();
+        Settings.Mute ? SoundMute() : SoundUnmute();
         Settings.Paused = FALSE;
     }
 }
@@ -472,6 +476,7 @@ static MenuResult enterLoadStateMenu() {
 
 static MenuResult enterSettingsMenu() {
     const MenuItem items[] = {
+        { MIT_BOOL, &Settings.Mute, _("Mute Audio") },
         { MIT_BOOL, &VideoSettings.Fullscreen, _("Fullscreen") },
         { MIT_BOOL8, &Settings.DisplayFrameRate, _("Show FPS") },
         { MIT_INT32, &VideoSettings.FrameRate, _("Frame Skip"), 0, 10,
