@@ -109,7 +109,11 @@ void S9xToggleSoundChannel(int c) {
     S9xSetSoundControl(sound_switch);
 }
 
-void SoundPause() {
+void SoundPause(bool clearCache) {
+    if (clearCache) {
+        ReadPos = WritePos = 0;
+        memset(Buffer, 0, sizeof(Buffer));
+    }
     SDL_PauseAudio(1);
 }
 
@@ -118,11 +122,13 @@ void SoundResume() {
 }
 
 void SoundMute() {
+    S9xSetSoundMute(TRUE);
     Muted = true;
 }
 
 void SoundUnmute() {
     Muted = false;
+    S9xSetSoundMute(FALSE);
 }
 
 void SoundClose() {

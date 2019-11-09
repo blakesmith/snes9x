@@ -1,6 +1,6 @@
 #pragma once
 
-void SoundPause();
+void SoundPause(bool clearCache = false);
 void SoundResume();
 void SoundMute();
 void SoundUnmute();
