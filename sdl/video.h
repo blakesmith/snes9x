@@ -9,6 +9,8 @@ struct VideoImageData {
 
 struct SVideoSettings {
     bool Fullscreen;
+    bool AllowInvalidVRAMAccess;
+    uint32_t FrameRate;
 };
 
 void VideoSetOriginResolution();
