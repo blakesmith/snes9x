@@ -240,6 +240,7 @@ int MenuRun(const MenuItem items[], int x, int valx, int y, int pageCount, int i
                     if (!cur->value) break;
                     val = *(int32_t *)cur->value;
                     if (++val > cur->valMax) val = cur->valMin;
+                    *(int32_t *)cur->value = val;
                     changed = true;
                     CALL_TRIGGER;
                     break;
@@ -301,15 +302,15 @@ static void drawMenu(const MenuItem items[], int x, int valx, int y, int index, 
                 hasvalue = true;
                 break;
             case MIT_INT8:
-                val = *(int8_t*)cur->value ? 1 : 0;
+                val = *(int8_t*)cur->value;
                 hasvalue = true;
                 break;
             case MIT_INT16:
-                val = *(int16_t*)cur->value ? 1 : 0;
+                val = *(int16_t*)cur->value;
                 hasvalue = true;
                 break;
             case MIT_INT32:
-                val = *(int32_t*)cur->value ? 1 : 0;
+                val = *(int32_t*)cur->value;
                 hasvalue = true;
                 break;
             default: break;
@@ -317,8 +318,13 @@ static void drawMenu(const MenuItem items[], int x, int valx, int y, int index, 
         if (hasvalue) {
             if (cur->valueFunc && (miv = (*cur->valueFunc)(val), miv.text != NULL)) {
                 VideoOutputString(valx, y, miv.text, false, true);
+            } else if (cur->type == MIT_BOOL8 || cur->type == MIT_BOOL) {
+                VideoOutputString(valx, y, val ? _("on") : _("off"), false, true);
+            } else {
+                char valstr[16];
+                snprintf(valstr, 16, "%d", val);
+                VideoOutputString(valx, y, valstr, false, true);
             }
-            VideoOutputString(valx, y, val ? _("on") : _("off"), false, true);
         }
         if (index == curIndex) {
             VideoOutputString(x - 10, y, ">", false, true);
