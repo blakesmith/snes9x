@@ -244,8 +244,13 @@ int main(int argc, char *argv[]) {
             S9xSetSoundMute(FALSE);
     }
 
+    if (VideoSettings.FrameRate == 0)
+        global_conf.SetString("Settings::FrameSkip", "Auto");
+    else
+        global_conf.SetInt("Settings::FrameSkip", VideoSettings.FrameRate - 1);
     global_conf.SetBool("Video::Fullscreen", VideoSettings.Fullscreen);
     global_conf.SetBool("Display::DisplayFrameRate", Settings.DisplayFrameRate);
+    global_conf.SetBool("Hack::AllowInvalidVRAMAccess", VideoSettings.AllowInvalidVRAMAccess);
     global_conf.SaveTo(saveFilename);
 
     S9xExit();
@@ -286,6 +291,8 @@ void S9xParsePortConfig(ConfigFile &conf, int pass) {
     global_conf.LoadFile(saveFilename);
 
     VideoSettings.Fullscreen = conf.GetBool("Video::Fullscreen", true);
+    VideoSettings.AllowInvalidVRAMAccess = !Settings.BlockInvalidVRAMAccessMaster;
+    VideoSettings.FrameRate = Settings.SkipFrames == AUTO_FRAMERATE ? 0 : Settings.SkipFrames;
 
     const char *dir = global_conf.GetString("BaseDir", defaultDir);
     if (dir) strncpy(s9xBaseDir, dir, PATH_MAX + 1);
@@ -466,9 +473,18 @@ static MenuResult enterLoadStateMenu() {
 static MenuResult enterSettingsMenu() {
     const MenuItem items[] = {
         { MIT_BOOL, &VideoSettings.Fullscreen, _("Fullscreen") },
-        { MIT_BOOL, &Settings.DisplayFrameRate, _("Show FPS") },
+        { MIT_BOOL8, &Settings.DisplayFrameRate, _("Show FPS") },
+        { MIT_INT32, &VideoSettings.FrameRate, _("Frame Skip"), 0, 10,
+          [](const MenuItem*)->MenuResult { Settings.SkipFrames = VideoSettings.FrameRate == 0 ? AUTO_FRAMERATE : VideoSettings.FrameRate; return MR_NONE; },
+          NULL,
+          [](int val)->MenuItemValue {
+            const char *values[11] = {_("AUTO"), "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+            return MenuItemValue { values[val < 0 || val > 10 ? 0 : val], NULL };
+        }},
+        { MIT_BOOL8, &VideoSettings.AllowInvalidVRAMAccess, _("AllowInvalidVRAMAccess"), 0, 0,
+          [](const MenuItem*)->MenuResult { Settings.BlockInvalidVRAMAccessMaster = Settings.BlockInvalidVRAMAccess = !VideoSettings.AllowInvalidVRAMAccess; return MR_NONE; }},
         { MIT_END }
     };
-    MenuRun(items, 100, 180, 80, 0, 0);
+    if (MenuRun(items, 70, 210, 80, 0, 0) == MR_LEAVE) return MR_LEAVE;
     return MR_NONE;
 }
