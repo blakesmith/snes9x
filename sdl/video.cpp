@@ -71,6 +71,7 @@ void S9xInitDisplay(int argc, char **argv) {
     ttf_font->add("C:\\Windows\\Fonts\\simsun.ttc");
 #else
     ttf_font->add("/usr/share/fonts/dejavu/DejaVuSansMono.ttf");
+    ttf_font->add("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
     ttf_font->add("/usr/share/gmenunx/skins/Default/font.ttf");
 #endif
 

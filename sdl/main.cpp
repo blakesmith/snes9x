@@ -290,7 +290,13 @@ void S9xParseArg(char **, int &, int) {
 }
 
 void S9xParsePortConfig(ConfigFile &conf, int pass) {
+    struct stat file_info;
+
     global_conf = conf;
+
+    if (stat (saveFilename, &file_info))
+        return;
+
     global_conf.LoadFile(saveFilename);
 
     VideoSettings.Fullscreen = conf.GetBool("Video::Fullscreen", true);
@@ -310,20 +316,40 @@ void S9xAutoSaveSRAM() {
 void S9xProcessEvents (bool8) {
     SDL_Event event;
     bool enterMenu = false;
+
+#ifdef GCW_ZERO
+    static bool escapePressed = false;
+    static bool returnPressed = false;
+#endif
+
     while (SDL_PollEvent(&event)) {
         switch(event.type) {
         case SDL_QUIT: s9xTerm = true; break;
         case SDL_KEYDOWN:
-            if (event.key.keysym.sym ==
+            switch (event.key.keysym.sym) {
 #ifdef GCW_ZERO
-                SDLK_HOME
+                case SDLK_ESCAPE:
+                    escapePressed = true;
+                    break;
+                case SDLK_RETURN:
+                    returnPressed = true;
+                    break;
+                case SDLK_HOME:
 #else
-                SDLK_ESCAPE
+                case SDLK_ESCAPE:
 #endif
-                ) {
-                enterMenu = true;
-                break;
+                    enterMenu = true;
+                    break;
             }
+
+#ifdef GCW_ZERO
+	if (escapePressed && returnPressed) {
+		enterMenu = true;
+		escapePressed = false;
+		returnPressed = false;
+	}
+#endif
+
             S9xReportButton(event.key.keysym.sym
 #ifndef GCW_ZERO
                 | (event.key.keysym.mod << 10)
@@ -331,6 +357,16 @@ void S9xProcessEvents (bool8) {
                 , true);
             break;
         case SDL_KEYUP:
+#ifdef GCW_ZERO
+            switch (event.key.keysym.sym) {
+		case SDLK_ESCAPE:
+		    escapePressed = false;
+		    break;
+		case SDLK_RETURN:
+		    returnPressed = false;
+		    break;
+	    }
+#endif
             S9xReportButton(event.key.keysym.sym
 #ifndef GCW_ZERO
                 | (event.key.keysym.mod << 10)
