@@ -490,6 +490,6 @@ static MenuResult enterSettingsMenu() {
           [](const MenuItem*)->MenuResult { Settings.BlockInvalidVRAMAccessMaster = Settings.BlockInvalidVRAMAccess = !VideoSettings.AllowInvalidVRAMAccess; return MR_NONE; }},
         { MIT_END }
     };
-    if (MenuRun(items, 70, 210, 80, 0, 0) == MR_LEAVE) return MR_LEAVE;
+    if (MenuRun(items, 70, 230, 80, 0, 0) == MR_LEAVE) return MR_LEAVE;
     return MR_NONE;
 }
