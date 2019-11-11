@@ -72,7 +72,7 @@ void S9xInitDisplay(int argc, char **argv) {
 #else
     ttf_font->add("/usr/share/fonts/dejavu/DejaVuSansMono.ttf");
     ttf_font->add("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
-    ttf_font->add("/usr/share/gmenunx/skins/Default/font.ttf");
+    ttf_font->add("/usr/share/gmenu2x/skins/Default/fonts/SourceHanSans-Regular-04.ttf");
 #endif
 
     S9xGraphicsInit();
