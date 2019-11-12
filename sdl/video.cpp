@@ -203,8 +203,9 @@ void S9xSyncSpeed() {
 
     // Delay until we're completed this frame.
     // Can't use setitimer because the sound code already could be using it. We don't actually need it either.
-    if (next1 > now + 5000)
-        usleep(next1 - now - 5000);
+    uint64_t deadline = now + Settings.FrameTime; // saving 1 frame time, giving all cpu time to logic layer
+    if (next1 > deadline)
+        usleep(next1 - deadline);
 
     // Calculate the timestamp of the next frame.
     next1 += Settings.FrameTime;
