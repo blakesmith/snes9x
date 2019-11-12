@@ -2,6 +2,18 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 if("${MODEL}" MATCHES "gcw0")
   set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/mips32-linux-gcc.cmake")
+  set(PROFILE_GEN_DIR "/media/data/profile/snes9x")
+else()
+  set(PROFILE_GEN_DIR "./profile/snes9x")
+endif()
+
+if(PROFILE_GEN)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-generate -fprofile-dir=${PROFILE_GEN_DIR}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-generate -fprofile-dir=${PROFILE_GEN_DIR}")
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-use -fprofile-dir=${CMAKE_BINARY_DIR}/profile")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-use -fprofile-dir=${CMAKE_BINARY_DIR}/profile")
+  set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -s")
 endif()
 
 project(snes9x)
