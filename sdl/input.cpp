@@ -30,8 +30,6 @@ void S9xSetupDefaultKeymap() {
     ASSIGN_BUTTON(SDLK_RIGHT, "Joypad1 Right");
     ASSIGN_BUTTON(SDLK_PAGEDOWN, "EmuTurbo");
     ASSIGN_BUTTON(SDLK_PAGEUP, "Pause");
-    ASSIGN_BUTTON(SDLK_KP_DIVIDE, "QuickSave010");
-    ASSIGN_BUTTON(SDLK_KP_PERIOD, "QuickLoad010");
 #else
     ASSIGN_BUTTON(SDLK_i, "Joypad1 X");
     ASSIGN_BUTTON(SDLK_l, "Joypad1 A");

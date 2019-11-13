@@ -482,7 +482,7 @@ static int enterMainMenu(int index) {
 static MenuResult enterSaveStateMenu() {
     MenuItem items[11] = {};
     char text[10][64];
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i <= 10; ++i) {
         items[i].type = MIT_CLICK;
         snprintf(text[i], 64, _("Save to slot %d"), i);
         items[i].text = text[i];
@@ -492,7 +492,7 @@ static MenuResult enterSaveStateMenu() {
             return MR_LEAVE;
         };
     }
-    items[10].type = MIT_END;
+    items[11].type = MIT_END;
     if (MenuRun(items, 80, 0, 70, 0, 0) == MR_LEAVE) return MR_LEAVE;
     return MR_NONE;
 }
@@ -502,9 +502,9 @@ static MenuResult enterLoadStateMenu() {
     char drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], def[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
     _splitpath(Memory.ROMFilename, drive, dir, def, ext);
 
-    MenuItem items[11] = {};
+    MenuItem items[12] = {};
     char text[10][64];
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i <= 10; ++i) {
         items[i].type = MIT_CLICK;
         snprintf(filename, PATH_MAX + 1, "%s%s%s.%03d", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, i);
         struct stat st = {};
@@ -535,7 +535,7 @@ static MenuResult enterLoadStateMenu() {
         }
         items[i].text = text[i];
     }
-    items[10].type = MIT_END;
+    items[11].type = MIT_END;
     if (MenuRun(items, 80, 0, 70, 0, 0) == MR_LEAVE) return MR_LEAVE;
     return MR_NONE;
 }
