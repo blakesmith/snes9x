@@ -466,8 +466,10 @@ static int enterMainMenu(int index) {
         { MIT_INT32, &languageIndex, _("Language"), 0, (int)i18n.getList().size() - 1,
           [](const MenuItem*)->MenuResult {
               const auto& l = i18n.getList();
-              if (languageIndex < l.size())
+              if (languageIndex < l.size()) {
                   i18n.apply(l[languageIndex].locale);
+				  VideoFontInit();
+			  }
               return MR_OK;
           },
           NULL,
@@ -480,8 +482,8 @@ static int enterMainMenu(int index) {
 }
 
 static MenuResult enterSaveStateMenu() {
-    MenuItem items[11] = {};
-    char text[10][64];
+    MenuItem items[12] = {};
+    char text[11][64];
     for (int i = 0; i <= 10; ++i) {
         items[i].type = MIT_CLICK;
         snprintf(text[i], 64, _("Save to slot %d"), i);
@@ -503,7 +505,7 @@ static MenuResult enterLoadStateMenu() {
     _splitpath(Memory.ROMFilename, drive, dir, def, ext);
 
     MenuItem items[12] = {};
-    char text[10][64];
+    char text[11][64];
     for (int i = 0; i <= 10; ++i) {
         items[i].type = MIT_CLICK;
         snprintf(filename, PATH_MAX + 1, "%s%s%s.%03d", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, i);

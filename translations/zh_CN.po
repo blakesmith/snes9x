@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: snes9x 1.6\n"
 "Report-Msgid-Bugs-To: soarchin@gmail.com\n"
-"POT-Creation-Date: 2019-11-13 21:48+0800\n"
+"POT-Creation-Date: 2019-11-13 22:00+0800\n"
 "PO-Revision-Date: 2019-11-13 20:11+0800\n"
 "Last-Translator:  <soarchin@gmail.com>\n"
 "Language-Team: Chinese (simplified)\n"
@@ -37,46 +37,46 @@ msgstr "重置游戏"
 msgid "Language"
 msgstr "语言"
 
-#: sdl/main.cpp:475
+#: sdl/main.cpp:477
 msgid "Quit"
 msgstr "退出"
 
-#: sdl/main.cpp:487
+#: sdl/main.cpp:489
 #, c-format
 msgid "Save to slot %d"
 msgstr "保存存档 "
 
-#: sdl/main.cpp:512
+#: sdl/main.cpp:514
 #, c-format
 msgid "Empty slot %d"
 msgstr "空闲存档位"
 
-#: sdl/main.cpp:516
+#: sdl/main.cpp:518
 #, c-format
 msgid "Load from slot %d"
 msgstr "加载存档 "
 
-#: sdl/main.cpp:545
+#: sdl/main.cpp:547
 msgid "Mute Audio"
 msgstr "静音"
 
-#: sdl/main.cpp:546
+#: sdl/main.cpp:548
 msgid "Fullscreen"
 msgstr "全屏"
 
-#: sdl/main.cpp:547
+#: sdl/main.cpp:549
 msgid "Show FPS"
 msgstr "显示FPS"
 
-#: sdl/main.cpp:548
+#: sdl/main.cpp:550
 msgid "Frame Skip"
 msgstr "跳帧"
 
-#: sdl/main.cpp:552
+#: sdl/main.cpp:554
 msgid "AUTO"
 msgstr "自动"
 
-#: sdl/main.cpp:555
+#: sdl/main.cpp:557
 msgid "AllowInvalidVRAMAccess"
 msgstr "允许非法显存写入"
 
@@ -88,6 +88,6 @@ msgstr "开"
 msgid "off"
 msgstr "关"
 
-#: sdl/video.cpp:71
+#: sdl/video.cpp:213
 msgid "/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 msgstr "/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf|/usr/share/gmenu2x/skins/Default/fonts/SourceHanSans-Regular-04.ttf"

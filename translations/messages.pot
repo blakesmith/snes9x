@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: snes9x 1.6\n"
 "Report-Msgid-Bugs-To: soarchin@gmail.com\n"
-"POT-Creation-Date: 2019-11-13 21:48+0800\n"
+"POT-Creation-Date: 2019-11-13 22:00+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,46 +37,46 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-#: sdl/main.cpp:475
+#: sdl/main.cpp:477
 msgid "Quit"
 msgstr ""
 
-#: sdl/main.cpp:487
+#: sdl/main.cpp:489
 #, c-format
 msgid "Save to slot %d"
 msgstr ""
 
-#: sdl/main.cpp:512
+#: sdl/main.cpp:514
 #, c-format
 msgid "Empty slot %d"
 msgstr ""
 
-#: sdl/main.cpp:516
+#: sdl/main.cpp:518
 #, c-format
 msgid "Load from slot %d"
 msgstr ""
 
-#: sdl/main.cpp:545
+#: sdl/main.cpp:547
 msgid "Mute Audio"
 msgstr ""
 
-#: sdl/main.cpp:546
+#: sdl/main.cpp:548
 msgid "Fullscreen"
 msgstr ""
 
-#: sdl/main.cpp:547
+#: sdl/main.cpp:549
 msgid "Show FPS"
 msgstr ""
 
-#: sdl/main.cpp:548
+#: sdl/main.cpp:550
 msgid "Frame Skip"
 msgstr ""
 
-#: sdl/main.cpp:552
+#: sdl/main.cpp:554
 msgid "AUTO"
 msgstr ""
 
-#: sdl/main.cpp:555
+#: sdl/main.cpp:557
 msgid "AllowInvalidVRAMAccess"
 msgstr ""
 
@@ -88,6 +88,6 @@ msgstr ""
 msgid "off"
 msgstr ""
 
-#: sdl/video.cpp:71
+#: sdl/video.cpp:213
 msgid "/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 msgstr ""

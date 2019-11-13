@@ -13,6 +13,7 @@ struct SVideoSettings {
     uint32_t FrameRate;
 };
 
+void VideoFontInit();
 void VideoSetOriginResolution();
 void VideoOutputString(int x, int y, const char *text, bool allowWrap = false, bool shadow = false);
 void VideoOutputStringPixel(int x, int y, const char *text, bool allowWrap = false, bool shadow = false);

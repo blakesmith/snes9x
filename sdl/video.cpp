@@ -38,7 +38,7 @@ SVideoSettings VideoSettings;
 
 static char logMsg[256] = {};
 static uint64_t logDeadline = 0ULL;
-static TTF::Font *ttf_font;
+static TTF::Font *ttf_font = NULL;
 static VideoImageData bg;
 static bool clearCache = false;
 
@@ -68,23 +68,7 @@ void S9xInitDisplay(int argc, char **argv) {
     SDL_ShowCursor(0);
     VideoSetOriginResolution();
 
-    const char *font_files = _("/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
-    int pos = 0;
-    if (ttf_font) delete ttf_font;
-    ttf_font = new TTF::Font(12, 0, screen);
-    while (pos >= 0) {
-        char font_filename[PATH_MAX];
-        const char *delim = strchr(font_files + pos, '|');
-        if (delim == NULL) {
-            strcpy(font_filename, font_files + pos);
-            pos = -1;
-        } else {
-            strncpy(font_filename, font_files + pos, delim - font_files - pos);
-            font_filename[delim - font_files - pos] = 0;
-            pos = delim - font_files + 1;
-        }
-        ttf_font->add(font_filename);
-    }
+	VideoFontInit();
 
     S9xGraphicsInit();
     // S9xCustomDisplayString = &VideoCustomDisplayString;
@@ -223,6 +207,27 @@ void S9xSyncSpeed() {
 }
 
 void SetInfoDlgColor(unsigned char, unsigned char, unsigned char) {
+}
+
+void VideoFontInit() {
+    const char *font_files = _("/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
+    int pos = 0;
+    if (ttf_font) delete ttf_font;
+    ttf_font = new TTF::Font(12, 0, screen);
+    while (pos >= 0) {
+        char font_filename[PATH_MAX];
+        const char *delim = strchr(font_files + pos, '|');
+        if (delim == NULL) {
+            strcpy(font_filename, font_files + pos);
+            pos = -1;
+        } else {
+            strncpy(font_filename, font_files + pos, delim - font_files - pos);
+            font_filename[delim - font_files - pos] = 0;
+            pos = delim - font_files + 1;
+        }
+        ttf_font->add(font_filename);
+    }
+
 }
 
 void VideoSetOriginResolution() {
