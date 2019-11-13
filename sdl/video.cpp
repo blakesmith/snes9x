@@ -9,6 +9,9 @@
 #include "ppu.h"
 
 #include <SDL.h>
+#include <libintl.h>
+
+#define _(s) gettext(s)
 
 #ifdef _WIN32
 #define STBI_WINDOWS_UTF8
@@ -65,15 +68,23 @@ void S9xInitDisplay(int argc, char **argv) {
     SDL_ShowCursor(0);
     VideoSetOriginResolution();
 
+    const char *font_files = _("/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
+    int pos = 0;
+    if (ttf_font) delete ttf_font;
     ttf_font = new TTF::Font(12, 0, screen);
-#ifdef _WIN32
-    ttf_font->add("C:\\Windows\\Fonts\\tahoma.ttc");
-    ttf_font->add("C:\\Windows\\Fonts\\simsun.ttc");
-#else
-    ttf_font->add("/usr/share/fonts/dejavu/DejaVuSansMono.ttf");
-    ttf_font->add("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
-    ttf_font->add("/usr/share/gmenu2x/skins/Default/fonts/SourceHanSans-Regular-04.ttf");
-#endif
+    while (pos >= 0) {
+        char font_filename[MAXPATHLEN];
+        const char *delim = strchr(font_files + pos, '|');
+        if (delim == NULL) {
+            strcpy(font_filename, font_files + pos);
+            pos = -1;
+        } else {
+            strncpy(font_filename, font_files + pos, delim - font_files - pos);
+            font_filename[delim - font_files - pos] = 0;
+            pos = delim - font_files + 1;
+        }
+        ttf_font->add(font_filename);
+    }
 
     S9xGraphicsInit();
     // S9xCustomDisplayString = &VideoCustomDisplayString;

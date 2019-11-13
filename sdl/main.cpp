@@ -3,6 +3,7 @@
 #include "menu.h"
 #include "video.h"
 #include "util.h"
+#include "i18n.h"
 
 #include "port.h"
 
@@ -33,14 +34,19 @@ char defaultDir[PATH_MAX + 1] {0};
 
 static void quickLoadState(int n);
 static void quickSaveState(int n);
-static void enterMainMenu();
+static int enterMainMenu(int index);
 static MenuResult enterSaveStateMenu();
 static MenuResult enterLoadStateMenu();
 static MenuResult enterSettingsMenu();
 
+I18n i18n;
+int languageIndex = 0;
+
 int main(int argc, char *argv[]) {
     if (argc < 2)
         S9xUsage();
+
+    i18n.init("snes9x");
 
     printf("\n\nSnes9x " VERSION " for unix\n");
     const char *homedir = getenv("HOME");
@@ -246,6 +252,8 @@ int main(int argc, char *argv[]) {
         S9xProcessEvents(FALSE);
     }
 
+	const auto &l = i18n.getList();
+    global_conf.SetString("Core::Language", languageIndex < l.size() ? l[languageIndex].locale.c_str() : "");
     if (VideoSettings.FrameRate == 0)
         global_conf.SetString("Settings::FrameSkip", "Auto");
     else
@@ -302,6 +310,18 @@ void S9xParsePortConfig(ConfigFile &conf, int pass) {
     VideoSettings.Fullscreen = conf.GetBool("Video::Fullscreen", true);
     VideoSettings.AllowInvalidVRAMAccess = !Settings.BlockInvalidVRAMAccessMaster;
     VideoSettings.FrameRate = Settings.SkipFrames == AUTO_FRAMERATE ? 0 : Settings.SkipFrames;
+    const char *language = conf.GetString("Core::Language", "");
+    if (language[0]) {
+        const auto &l = i18n.getList();
+        for (size_t i = 0; i < l.size(); ++i) {
+            if (l[i].locale == language) {
+                languageIndex = (int)i;
+                break;
+            }
+        }
+        if (languageIndex)
+            i18n.apply(language);
+    }
 
     const char *dir = global_conf.GetString("BaseDir", defaultDir);
     if (dir) strncpy(s9xBaseDir, dir, PATH_MAX + 1);
@@ -343,11 +363,11 @@ void S9xProcessEvents (bool8) {
             }
 
 #ifdef GCW_ZERO
-	if (escapePressed && returnPressed) {
-		enterMenu = true;
-		escapePressed = false;
-		returnPressed = false;
-	}
+    if (escapePressed && returnPressed) {
+        enterMenu = true;
+        escapePressed = false;
+        returnPressed = false;
+    }
 #endif
 
             S9xReportButton(event.key.keysym.sym
@@ -359,13 +379,13 @@ void S9xProcessEvents (bool8) {
         case SDL_KEYUP:
 #ifdef GCW_ZERO
             switch (event.key.keysym.sym) {
-		case SDLK_ESCAPE:
-		    escapePressed = false;
-		    break;
-		case SDLK_RETURN:
-		    returnPressed = false;
-		    break;
-	    }
+        case SDLK_ESCAPE:
+            escapePressed = false;
+            break;
+        case SDLK_RETURN:
+            returnPressed = false;
+            break;
+        }
 #endif
             S9xReportButton(event.key.keysym.sym
 #ifndef GCW_ZERO
@@ -383,7 +403,8 @@ void S9xProcessEvents (bool8) {
         VideoFreeze();
         VideoSetOriginResolution();
 
-        enterMainMenu();
+        int index = 0;
+        while ((index = enterMainMenu(index)) >= 0) ;
 
         VideoClearCache();
         VideoUnfreeze();
@@ -432,8 +453,8 @@ static void quickSaveState(int n) {
         S9xMessage(S9X_ERROR, S9X_FREEZE_FILE_NOT_FOUND, "Unable to write file");
 }
 
-static void enterMainMenu() {
-    const MenuItem items[] = {
+static int enterMainMenu(int index) {
+    MenuItem items[] = {
         { MIT_CLICK, NULL, _("Save state"), 0, 0,
           [](const MenuItem*)->MenuResult { return enterSaveStateMenu(); } },
         { MIT_CLICK, NULL, _("Load state"), 0, 0,
@@ -442,11 +463,20 @@ static void enterMainMenu() {
           [](const MenuItem*)->MenuResult { return enterSettingsMenu(); } },
         { MIT_CLICK, NULL, _("Reset"), 0, 0,
           [](const MenuItem*)->MenuResult { S9xReset(); return MR_LEAVE; } },
+        { MIT_INT32, &languageIndex, _("Language"), 0, (int)i18n.getList().size() - 1,
+          [](const MenuItem*)->MenuResult {
+              const auto& l = i18n.getList();
+              if (languageIndex < l.size())
+                  i18n.apply(l[languageIndex].locale);
+              return MR_OK;
+          },
+          NULL,
+          [](int val)->MenuItemValue { return MenuItemValue { i18n.getList()[val].name.c_str() }; } },
         { MIT_CLICK, NULL, _("Quit"), 0, 0,
           [](const MenuItem*)->MenuResult { s9xTerm = true; return MR_LEAVE; } },
         { MIT_END }
     };
-    MenuRun(items, 120, 0, 80, 0, 0);
+    return MenuRun(items, 120, 180, 80, 0, index);
 }
 
 static MenuResult enterSaveStateMenu() {

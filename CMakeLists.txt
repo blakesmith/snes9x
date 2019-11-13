@@ -24,10 +24,9 @@ set(CMAKE_CXX_STANDARD 11)
 find_package(SDL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Freetype REQUIRED)
-find_library(Intl_LIBRARY "intl"
-  DOC "libintl libraries (if not in the C library)")
+find_package(Gettext REQUIRED)
+find_library(Intl_LIBRARY "intl" DOC "libintl libraries (if not in the C library)")
 mark_as_advanced(Intl_LIBRARY)
-
 
 set(SRC_FILES
 	bsx.cpp c4.cpp c4emu.cpp cheats.cpp cheats2.cpp clip.cpp conffile.cpp
@@ -51,7 +50,7 @@ set(SRC_FILES
 	jma/jma.cpp jma/lzma.cpp jma/lzmadec.cpp jma/s9x-jma.cpp jma/winout.cpp
 
 	sdl/input.cpp sdl/sound.cpp sdl/video.cpp sdl/ttf.cpp sdl/util.cpp
-	sdl/main.cpp sdl/menu.cpp)
+	sdl/main.cpp sdl/menu.cpp sdl/i18n.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
@@ -71,3 +70,24 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${FREETYPE_LIBRARIES}
 	${SDL_LIBRARY} ${ZLIB_LIBRARIES} ${Intl_LIBRARY})
+
+file(STRINGS ${CMAKE_SOURCE_DIR}/translations/locales TRANSLATIONS)
+set(mo_files)
+foreach(trans ${TRANSLATIONS})
+  string(REPLACE " " ";" transl "${trans}")
+  list(LENGTH transl len)
+  if(len EQUAL 0)
+    continue()
+  endif()
+  list(GET transl 0 locale)
+  add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/locale/${locale}/LC_MESSAGES/snes9x.mo"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/locale/${locale}/LC_MESSAGES"
+    COMMAND ${GETTEXT_MSGFMT_EXECUTABLE}
+      -o "${CMAKE_BINARY_DIR}/locale/${locale}/LC_MESSAGES/snes9x.mo"
+      "${CMAKE_SOURCE_DIR}/translations/${locale}.po"
+    DEPENDS "${CMAKE_SOURCE_DIR}/translations/${locale}.po"
+    )
+  set(mo_files ${mo_files} "${CMAKE_BINARY_DIR}/locale/${locale}/LC_MESSAGES/snes9x.mo")
+endforeach()
+
+add_custom_target(update-mo ALL DEPENDS ${mo_files})

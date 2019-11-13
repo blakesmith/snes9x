@@ -1,0 +1,93 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR snes9x RG350 port Team
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: snes9x 1.6\n"
+"Report-Msgid-Bugs-To: soarchin@gmail.com\n"
+"POT-Creation-Date: 2019-11-13 21:48+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: sdl/main.cpp:458
+msgid "Save state"
+msgstr ""
+
+#: sdl/main.cpp:460
+msgid "Load state"
+msgstr ""
+
+#: sdl/main.cpp:462
+msgid "Settings"
+msgstr ""
+
+#: sdl/main.cpp:464
+msgid "Reset"
+msgstr ""
+
+#: sdl/main.cpp:466
+msgid "Language"
+msgstr ""
+
+#: sdl/main.cpp:475
+msgid "Quit"
+msgstr ""
+
+#: sdl/main.cpp:487
+#, c-format
+msgid "Save to slot %d"
+msgstr ""
+
+#: sdl/main.cpp:512
+#, c-format
+msgid "Empty slot %d"
+msgstr ""
+
+#: sdl/main.cpp:516
+#, c-format
+msgid "Load from slot %d"
+msgstr ""
+
+#: sdl/main.cpp:545
+msgid "Mute Audio"
+msgstr ""
+
+#: sdl/main.cpp:546
+msgid "Fullscreen"
+msgstr ""
+
+#: sdl/main.cpp:547
+msgid "Show FPS"
+msgstr ""
+
+#: sdl/main.cpp:548
+msgid "Frame Skip"
+msgstr ""
+
+#: sdl/main.cpp:552
+msgid "AUTO"
+msgstr ""
+
+#: sdl/main.cpp:555
+msgid "AllowInvalidVRAMAccess"
+msgstr ""
+
+#: sdl/menu.cpp:322
+msgid "on"
+msgstr ""
+
+#: sdl/menu.cpp:322
+msgid "off"
+msgstr ""
+
+#: sdl/video.cpp:71
+msgid "/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+msgstr ""

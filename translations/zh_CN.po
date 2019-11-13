@@ -1,0 +1,93 @@
+# Chinese translations for snes9x package
+# snes9x 软件包的简体中文翻译.
+# Copyright (C) 2019 snes9x RG350 port Team
+# This file is distributed under the same license as the snes9x package.
+#  <soarchin@gmail.com>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: snes9x 1.6\n"
+"Report-Msgid-Bugs-To: soarchin@gmail.com\n"
+"POT-Creation-Date: 2019-11-13 21:48+0800\n"
+"PO-Revision-Date: 2019-11-13 20:11+0800\n"
+"Last-Translator:  <soarchin@gmail.com>\n"
+"Language-Team: Chinese (simplified)\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: sdl/main.cpp:458
+msgid "Save state"
+msgstr "保存即时存档"
+
+#: sdl/main.cpp:460
+msgid "Load state"
+msgstr "加载即时存档"
+
+#: sdl/main.cpp:462
+msgid "Settings"
+msgstr "设置"
+
+#: sdl/main.cpp:464
+msgid "Reset"
+msgstr "重置游戏"
+
+#: sdl/main.cpp:466
+msgid "Language"
+msgstr "语言"
+
+#: sdl/main.cpp:475
+msgid "Quit"
+msgstr "退出"
+
+#: sdl/main.cpp:487
+#, c-format
+msgid "Save to slot %d"
+msgstr "保存存档 "
+
+#: sdl/main.cpp:512
+#, c-format
+msgid "Empty slot %d"
+msgstr "空闲存档位"
+
+#: sdl/main.cpp:516
+#, c-format
+msgid "Load from slot %d"
+msgstr "加载存档 "
+
+#: sdl/main.cpp:545
+msgid "Mute Audio"
+msgstr "静音"
+
+#: sdl/main.cpp:546
+msgid "Fullscreen"
+msgstr "全屏"
+
+#: sdl/main.cpp:547
+msgid "Show FPS"
+msgstr "显示FPS"
+
+#: sdl/main.cpp:548
+msgid "Frame Skip"
+msgstr "跳帧"
+
+#: sdl/main.cpp:552
+msgid "AUTO"
+msgstr "自动"
+
+#: sdl/main.cpp:555
+msgid "AllowInvalidVRAMAccess"
+msgstr "允许非法显存写入"
+
+#: sdl/menu.cpp:322
+msgid "on"
+msgstr "开"
+
+#: sdl/menu.cpp:322
+msgid "off"
+msgstr "关"
+
+#: sdl/video.cpp:71
+msgid "/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+msgstr "/usr/share/fonts/dejavu/DejaVuSansMono.ttf|/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf|/usr/share/gmenu2x/skins/Default/fonts/SourceHanSans-Regular-04.ttf"
