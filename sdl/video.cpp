@@ -73,7 +73,7 @@ void S9xInitDisplay(int argc, char **argv) {
     if (ttf_font) delete ttf_font;
     ttf_font = new TTF::Font(12, 0, screen);
     while (pos >= 0) {
-        char font_filename[MAXPATHLEN];
+        char font_filename[PATH_MAX];
         const char *delim = strchr(font_files + pos, '|');
         if (delim == NULL) {
             strcpy(font_filename, font_files + pos);
