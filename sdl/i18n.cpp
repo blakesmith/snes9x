@@ -1,5 +1,6 @@
 #include "i18n.h"
 
+#include <stdlib.h>
 #include <libintl.h>
 #include <libgen.h>
 #include <unistd.h>
@@ -60,6 +61,10 @@ void I18n::init(const std::string &appname)
 void I18n::apply(const std::string &lang)
 {
 	std::string locale = lang + ".UTF-8";
+#ifdef _WIN32
+	putenv(("LC_MESSAGES" + locale).c_str());
+#else
 	setenv("LC_MESSAGES", locale.c_str(), 1);
+#endif
 	setlocale(LC_ALL, "");
 }
