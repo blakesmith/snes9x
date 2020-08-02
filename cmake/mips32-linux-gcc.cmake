@@ -32,7 +32,7 @@ set(CMAKE_OBJDUMP      "${TOOLCHAIN_BINARY_DIR}${CROSS}objdump${TOOL_OS_SUFFIX}"
 set(CMAKE_RANLIB       "${TOOLCHAIN_BINARY_DIR}${CROSS}ranlib${TOOL_OS_SUFFIX}"  CACHE PATH "ranlib")
 
 set(CMAKE_C_FLAGS          "${CMAKE_C_FLAGS} ${MIPS_CFLAGS}"                     CACHE STRING "C flags")
-set(CMAKE_CXX_FLAGS        "${CMAKE_CXX_FLAGS} ${MIPS_CFLAGS} ${MIPS_CXXFLAGS}"  CACHE STRING "C++ flags")
+set(CMAKE_CXX_FLAGS        "${CMAKE_CXX_FLAGS} ${MIPS_CFLAGS} ${MIPS_CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=0"  CACHE STRING "C++ flags")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed -Wl,--gc-sections" CACHE STRING "Executable linker flags")
 
 # No runtime cpu detect for mipsel-linux-gcc.
